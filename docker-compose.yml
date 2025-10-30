@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [app-net]
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks: [app-net]
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  strapi:
+    build:
+      context: ./strapi
+    image: alvaro/strapi:v1
+    container_name: strapi
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: ${STRAPI_PORT}
+    volumes:
+      - strapi-uploads:/srv/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [app-net]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    image: alvaro/frontend:v1
+    container_name: frontend
+    networks: [app-net]
+
+  gateway:
+    build:
+      context: ./gateway
+    image: alvaro/gateway:v1
+    container_name: gateway
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - strapi
+    networks: [app-net]
+
+networks:
+  app-net:
+
+volumes:
+  postgres-data:
+  strapi-uploads:

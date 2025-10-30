@@ -1,0 +1,101 @@
+# =========================
+# Node / Strapi / Frontend
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.env
+.env.local
+.env.production
+.env.development
+
+# Strapi specific
+.strapi-updater.json
+/.cache/
+/build/
+/dist/
+/exports/
+/tmp/
+/.strapirc
+/public/uploads/*
+
+# =========================
+# Docker / Compose / Swarm
+# =========================
+# Volúmenes y data persistente
+postgres-data/
+strapi-uploads/
+*.pid
+*.seed
+*.tar
+*.gz
+
+# Archivos temporales o cache de Docker
+**/.dockerignore
+**/.env
+.docker/
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# =========================
+# Kubernetes / K3D
+# =========================
+# Archivos temporales o de kubeconfig
+.kube/
+*.kubeconfig
+*.yaml.save
+*.tmp
+
+# =========================
+# Sistema / IDE / OS
+# =========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*.tmp
+~$*
+
+# =========================
+# Logs y cachés
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log.json
+*.log.old
+*.out
+*.err
+
+# =========================
+# Archivos grandes o auxiliares
+# =========================
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.pdf
+*.bak
+*.old
+
+# =========================
+# Coverage / Testing
+# =========================
+coverage/
+nyc_output/
+.vscode-test/
+jest-html-reporters-*
+
+# =========================
+# Archivos de entorno de prueba
+# =========================
+test-results/
+sandbox/
+uploads/

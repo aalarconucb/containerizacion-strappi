@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-nginx-conf
+  namespace: app
+data:
+  nginx.conf: |
+    worker_processes auto;
+    events { worker_connections 1024; }
+    http {
+      sendfile on;
+      upstream frontend_upstream { server frontend:80; }
+      upstream strapi_upstream   { server strapi:1337; }
+      server {
+        listen 80;
+        location / {
+          proxy_pass http://frontend_upstream;
+          proxy_set_header Host $host;
+          try_files $uri $uri/ /index.html;
+        }
+        location /api/ {
+          proxy_pass http://strapi_upstream/;
+          proxy_set_header Host $host;
+        }
+        location /uploads/ {
+          proxy_pass http://strapi_upstream/uploads/;
+        }
+        location /healthz { return 200 'ok'; add_header Content-Type text/plain; }
+      }
+    }

@@ -1,0 +1,127 @@
+version: "3.9"
+
+configs:
+  gateway_default.conf:
+    external: true
+
+secrets:
+  pg_password:
+    external: true
+  app_keys:
+    external: true
+  api_token_salt:
+    external: true
+  admin_jwt_secret:
+    external: true
+  jwt_secret:
+    external: true
+
+networks:
+  app-net:
+    # manual de la red
+
+volumes:
+  postgres-data:
+  strapi-uploads:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets:
+      - pg_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [app-net]
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]  # opcional en 1-nodo
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+
+  redis:
+    image: redis:7-alpine
+    networks: [app-net]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      update_config:
+        order: start-first
+
+  strapi:
+    image: alvaro/strapi:v1
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 1337
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD_FILE: /run/secrets/pg_password
+      APP_KEYS_FILE: /run/secrets/app_keys
+      API_TOKEN_SALT_FILE: /run/secrets/api_token_salt
+      ADMIN_JWT_SECRET_FILE: /run/secrets/admin_jwt_secret
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    secrets:
+      - pg_password
+      - app_keys
+      - api_token_salt
+      - admin_jwt_secret
+      - jwt_secret
+    volumes:
+      - strapi-uploads:/srv/app/public/uploads
+    networks: [app-net]
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+
+  frontend:
+    image: alvaro/frontend:v1
+    networks: [app-net]
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 2
+        order: start-first
+      rollback_config:
+        parallelism: 2
+        order: stop-first
+
+  gateway:
+    image: alvaro/gateway:v1
+    ports:
+      - "80:80"
+    configs:
+      - source: gateway_default.conf
+        target: /etc/nginx/conf.d/default.conf
+    networks: [app-net]
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 2
+        order: start-first
+      rollback_config:
+        parallelism: 2
+        order: stop-first
